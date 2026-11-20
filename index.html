@@ -3,25 +3,41 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Image Size Reducer</title>
+  <title>Image Size Reducer Pro</title>
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#0f172a" />
   <style>
     * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
     body { margin: 0; background: #0f172a; color: #f8fafc; padding: 16px; display: flex; justify-content: center; }
-    .app { width: 100%; max-width: 480px; }
-    h1 { font-size: 1.4rem; text-align: center; margin-bottom: 16px; }
+    .app { width: 100%; max-width: 500px; }
+    h1 { font-size: 1.35rem; text-align: center; margin: 0 0 14px; }
     .card { background: #1e293b; border-radius: 14px; padding: 16px; margin-bottom: 14px; }
     .upload-btn { display: block; width: 100%; padding: 14px; text-align: center; background: #3b82f6; color: #fff; border-radius: 10px; font-weight: 600; cursor: pointer; }
+    .limit-note { text-align: center; font-size: 0.78rem; color: #94a3b8; margin-top: 6px; }
+    .warn { background: #7f1d1d; color: #fecaca; padding: 8px 10px; border-radius: 8px; font-size: 0.82rem; margin-top: 10px; display: none; }
     input[type="file"] { display: none; }
-    label { display: flex; justify-content: space-between; font-size: 0.9rem; margin-top: 12px; color: #cbd5e1; }
-    input[type="range"], select { width: 100%; margin-top: 6px; padding: 8px; border-radius: 8px; border: none; background: #334155; color: #fff; }
-    .stats { display: flex; justify-content: space-between; gap: 8px; margin-top: 12px; font-size: 0.85rem; }
+    label { display: flex; justify-content: space-between; font-size: 0.88rem; margin-top: 12px; color: #cbd5e1; }
+    input[type="range"], input[type="number"], select {
+      width: 100%; margin-top: 6px; padding: 10px; border-radius: 8px; border: 1px solid #475569; background: #334155; color: #fff; font-size: 0.92rem;
+    }
+    input[type="range"] { padding: 0; border: none; }
+    .row { display: flex; gap: 10px; }
+    .row > div { flex: 1; }
+    .check-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 0.85rem; color: #cbd5e1; }
+    .check-row input { width: auto; margin: 0; }
+    .action-btn { width: 100%; padding: 13px; margin-top: 14px; border: none; border-radius: 10px; background: #6366f1; color: #fff; font-size: 0.98rem; font-weight: 700; cursor: pointer; }
+    .stats { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 12px; font-size: 0.85rem; }
     .stat-box { flex: 1; background: #0f172a; padding: 10px; border-radius: 8px; text-align: center; }
-    .stat-box strong { display: block; font-size: 1rem; margin-top: 4px; color: #38bdf8; }
+    .stat-box strong { display: block; font-size: 0.95rem; margin-top: 4px; color: #38bdf8; }
     .saved { color: #4ade80 !important; }
-    img { width: 100%; max-height: 260px; object-fit: contain; border-radius: 10px; margin-top: 12px; background: #0f172a; display: none; }
-    .download-btn { width: 100%; padding: 14px; margin-top: 14px; border: none; border-radius: 10px; background: #22c55e; color: #052e16; font-size: 1rem; font-weight: 700; cursor: pointer; display: none; }
+    .download-all-btn { width: 100%; padding: 13px; margin-bottom: 10px; border: none; border-radius: 10px; background: #22c55e; color: #052e16; font-size: 0.98rem; font-weight: 700; cursor: pointer; }
+    .item { display: flex; align-items: center; gap: 10px; background: #0f172a; padding: 10px; border-radius: 10px; margin-top: 10px; }
+    .item img { width: 54px; height: 54px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
+    .item-info { flex: 1; min-width: 0; font-size: 0.78rem; }
+    .item-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; color: #f8fafc; }
+    .item-meta { color: #94a3b8; margin-top: 3px; }
+    .item-meta span { color: #4ade80; font-weight: 600; }
+    .save-one-btn { padding: 8px 12px; border: none; border-radius: 8px; background: #3b82f6; color: #fff; font-size: 0.8rem; font-weight: 600; cursor: pointer; flex-shrink: 0; }
   </style>
 </head>
 <body>
@@ -29,51 +45,93 @@
     <h1>Image Size Reducer</h1>
 
     <div class="card">
-      <label class="upload-btn" for="fileInput">Choose Image</label>
-      <input type="file" id="fileInput" accept="image/*" />
-
-      <label>Quality <span id="qVal">75%</span></label>
-      <input type="range" id="quality" min="10" max="100" value="75" />
-
-      <label>Max Width</label>
-      <select id="maxWidth">
-        <option value="0">Original Size</option>
-        <option value="1920">1920 px (Full HD)</option>
-        <option value="1280" selected>1280 px (HD)</option>
-        <option value="800">800 px (Small)</option>
-      </select>
+      <label class="upload-btn" for="fileInput">Choose Images (Max 30)</label>
+      <div class="limit-note" id="selectedCount">တစ်ကြိမ်လျှင် အများဆုံး ပုံ ၃၀ အထိ ရွေးနိုင်ပါသည်</div>
+      <div class="warn" id="warnBox"></div>
+      <input type="file" id="fileInput" accept="image/*" multiple />
 
       <label>Output Format</label>
       <select id="format">
-        <option value="image/jpeg">JPEG (.jpg)</option>
-        <option value="image/webp">WebP (.webp - Smallest)</option>
+        <option value="image/jpeg">JPEG (.jpg) — နေရာတိုင်းသုံး</option>
+        <option value="image/webp">WebP (.webp) — ဆိုဒ်အသေးဆုံး</option>
+        <option value="image/png">PNG (.png) — နောက်ခံအကြည်ထိန်း</option>
       </select>
+
+      <label>Resize (Width / Height)</label>
+      <select id="sizePreset">
+        <option value="original">Original Size (မူရင်းအတိုင်း)</option>
+        <option value="3840">3840 px (4K UHD)</option>
+        <option value="1920">1920 px (Full HD)</option>
+        <option value="1280" selected>1280 px (HD)</option>
+        <option value="1080x1080">1080 x 1080 (Square)</option>
+        <option value="800">800 px (Medium)</option>
+        <option value="600">600 px (Small)</option>
+        <option value="400">400 px (Thumbnail)</option>
+        <option value="custom">Custom Size (ကိုယ်တိုင်သတ်မှတ်မယ်)</option>
+      </select>
+
+      <div id="customSizeBox" style="display:none;">
+        <div class="row">
+          <div>
+            <label>Width (px)</label>
+            <input type="number" id="customW" placeholder="e.g. 1000" min="10" />
+          </div>
+          <div>
+            <label>Height (px)</label>
+            <input type="number" id="customH" placeholder="e.g. 1000" min="10" />
+          </div>
+        </div>
+        <div class="check-row">
+          <input type="checkbox" id="keepRatio" checked />
+          <span>Keep Aspect Ratio (ပုံအချိုးအစား ထိန်းမယ်)</span>
+        </div>
+      </div>
+
+      <label>Target File Size in KB (မထည့်လည်းရ)</label>
+      <input type="number" id="targetKB" placeholder="ဥပမာ 200 (200 KB အောက် လျှော့မယ်)" min="10" />
+
+      <div id="qualityBox">
+        <label>Quality <span id="qVal">75%</span></label>
+        <input type="range" id="quality" min="10" max="100" value="75" />
+      </div>
+
+      <button class="action-btn" id="compressBtn">Compress Images</button>
     </div>
 
     <div class="card" id="resultCard" style="display:none;">
       <div class="stats">
-        <div class="stat-box">Original<strong id="origSize">-</strong></div>
-        <div class="stat-box">Reduced<strong id="newSize" class="saved">-</strong></div>
+        <div class="stat-box">Total Original<strong id="origSize">-</strong></div>
+        <div class="stat-box">Total Reduced<strong id="newSize" class="saved">-</strong></div>
       </div>
-      <img id="preview" alt="Preview" />
-      <button class="download-btn" id="downloadBtn">Save Reduced Image</button>
+      <button class="download-all-btn" id="downloadAllBtn">Save All Images</button>
+      <div id="imageList"></div>
     </div>
   </div>
 
   <script>
+    const MAX_FILES = 30;
     const fileInput = document.getElementById('fileInput');
+    const selectedCount = document.getElementById('selectedCount');
+    const warnBox = document.getElementById('warnBox');
+    const formatEl = document.getElementById('format');
+    const sizePreset = document.getElementById('sizePreset');
+    const customSizeBox = document.getElementById('customSizeBox');
+    const customW = document.getElementById('customW');
+    const customH = document.getElementById('customH');
+    const keepRatio = document.getElementById('keepRatio');
+    const targetKBEl = document.getElementById('targetKB');
+    const qualityBox = document.getElementById('qualityBox');
     const qualityEl = document.getElementById('quality');
     const qVal = document.getElementById('qVal');
-    const maxWidthEl = document.getElementById('maxWidth');
-    const formatEl = document.getElementById('format');
+    const compressBtn = document.getElementById('compressBtn');
     const resultCard = document.getElementById('resultCard');
     const origSizeEl = document.getElementById('origSize');
     const newSizeEl = document.getElementById('newSize');
-    const preview = document.getElementById('preview');
-    const downloadBtn = document.getElementById('downloadBtn');
+    const downloadAllBtn = document.getElementById('downloadAllBtn');
+    const imageList = document.getElementById('imageList');
 
-    let originalFile = null;
-    let compressedBlob = null;
+    let selectedFiles = [];
+    let compressedResults = [];
 
     function formatBytes(bytes) {
       if (bytes < 1024) return bytes + ' B';
@@ -81,65 +139,187 @@
       return (bytes / 1048576).toFixed(2) + ' MB';
     }
 
-    function compressImage() {
-      if (!originalFile) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          let w = img.width;
-          let h = img.height;
-          const maxW = parseInt(maxWidthEl.value, 10);
-          if (maxW > 0 && w > maxW) {
-            h = Math.round((h * maxW) / w);
-            w = maxW;
-          }
-          const canvas = document.createElement('canvas');
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, w, h);
-
-          const mime = formatEl.value;
-          const q = parseInt(qualityEl.value, 10) / 100;
-
-          canvas.toBlob((blob) => {
-            compressedBlob = blob;
-            const savedPct = Math.max(0, Math.round((1 - blob.size / originalFile.size) * 100));
-            origSizeEl.textContent = formatBytes(originalFile.size);
-            newSizeEl.textContent = `${formatBytes(blob.size)} (-${savedPct}%)`;
-            preview.src = URL.createObjectURL(blob);
-            preview.style.display = 'block';
-            downloadBtn.style.display = 'block';
-            resultCard.style.display = 'block';
-          }, mime, q);
-        };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(originalFile);
-    }
-
-    fileInput.addEventListener('change', (e) => {
-      if (e.target.files[0]) {
-        originalFile = e.target.files[0];
-        compressImage();
-      }
+    sizePreset.addEventListener('change', () => {
+      customSizeBox.style.display = sizePreset.value === 'custom' ? 'block' : 'none';
     });
 
     qualityEl.addEventListener('input', () => {
       qVal.textContent = qualityEl.value + '%';
-      compressImage();
     });
-    maxWidthEl.addEventListener('change', compressImage);
-    formatEl.addEventListener('change', compressImage);
 
-    downloadBtn.addEventListener('click', () => {
-      if (!compressedBlob) return;
-      const ext = formatEl.value === 'image/webp' ? 'webp' : 'jpg';
+    targetKBEl.addEventListener('input', () => {
+      qualityBox.style.opacity = targetKBEl.value ? '0.4' : '1';
+    });
+
+    function getTargetDimensions(origW, origH) {
+      const preset = sizePreset.value;
+      if (preset === 'original') return { w: origW, h: origH };
+      if (preset === '1080x1080') return { w: 1080, h: 1080 };
+      if (preset === 'custom') {
+        let w = parseInt(customW.value, 10) || 0;
+        let h = parseInt(customH.value, 10) || 0;
+        if (!w && !h) return { w: origW, h: origH };
+        if (keepRatio.checked) {
+          if (w && !h) return { w, h: Math.round((origH * w) / origW) };
+          if (h && !w) return { w: Math.round((origW * h) / origH), h };
+          const ratio = Math.min(w / origW, h / origH);
+          return { w: Math.round(origW * ratio), h: Math.round(origH * ratio) };
+        }
+        return { w: w || origW, h: h || origH };
+      }
+      const maxW = parseInt(preset, 10);
+      if (origW > maxW) {
+        return { w: maxW, h: Math.round((origH * maxW) / origW) };
+      }
+      return { w: origW, h: origH };
+    }
+
+    function renderToBlob(img, w, h, mime, q) {
+      return new Promise((resolve) => {
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(w));
+        canvas.height = Math.max(1, Math.round(h));
+        const ctx = canvas.getContext('2d');
+        if (mime === 'image/jpeg') {
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((blob) => resolve({ blob, w: canvas.width, h: canvas.height }), mime, q);
+      });
+    }
+
+    async function compressSingle(file) {
+      const dataUrl = await new Promise((res) => {
+        const r = new FileReader();
+        r.onload = (e) => res(e.target.result);
+        r.readAsDataURL(file);
+      });
+
+      const img = await new Promise((res) => {
+        const i = new Image();
+        i.onload = () => res(i);
+        i.src = dataUrl;
+      });
+
+      const mime = formatEl.value;
+      const ext = mime === 'image/webp' ? 'webp' : mime === 'image/png' ? 'png' : 'jpg';
+      const baseName = file.name.replace(/\.[^/.]+$/, '');
+      let { w, h } = getTargetDimensions(img.width, img.height);
+      const targetKB = parseInt(targetKBEl.value, 10);
+
+      let finalRes;
+      if (targetKB && targetKB > 0) {
+        const targetBytes = targetKB * 1024;
+        if (mime === 'image/png') {
+          let scale = 1;
+          finalRes = await renderToBlob(img, w, h, mime, 1);
+          while (finalRes.blob.size > targetBytes && scale > 0.15) {
+            scale *= 0.8;
+            finalRes = await renderToBlob(img, w * scale, h * scale, mime, 1);
+          }
+        } else {
+          let minQ = 0.05, maxQ = 0.98, best = null;
+          for (let step = 0; step < 7; step++) {
+            const midQ = (minQ + maxQ) / 2;
+            const res = await renderToBlob(img, w, h, mime, midQ);
+            if (res.blob.size <= targetBytes) {
+              best = res;
+              minQ = midQ;
+            } else {
+              maxQ = midQ;
+            }
+          }
+          finalRes = best || await renderToBlob(img, w, h, mime, 0.05);
+          let scale = 1;
+          while (finalRes.blob.size > targetBytes && scale > 0.2) {
+            scale *= 0.8;
+            finalRes = await renderToBlob(img, w * scale, h * scale, mime, 0.1);
+          }
+        }
+      } else {
+        const q = parseInt(qualityEl.value, 10) / 100;
+        finalRes = await renderToBlob(img, w, h, mime, q);
+      }
+
+      return {
+        name: `${baseName}-reduced.${ext}`,
+        origSize: file.size,
+        w: finalRes.w,
+        h: finalRes.h,
+        blob: finalRes.blob,
+        url: URL.createObjectURL(finalRes.blob)
+      };
+    }
+
+    async function compressAll() {
+      if (!selectedFiles.length) return;
+      resultCard.style.display = 'block';
+      imageList.innerHTML = '<p style="text-align:center;color:#94a3b8;">Processing images...</p>';
+
+      compressedResults = [];
+      for (const file of selectedFiles) {
+        const res = await compressSingle(file);
+        compressedResults.push(res);
+      }
+
+      let totalOrig = 0;
+      let totalNew = 0;
+      imageList.innerHTML = '';
+
+      compressedResults.forEach((item) => {
+        totalOrig += item.origSize;
+        totalNew += item.blob.size;
+        const pct = Math.max(0, Math.round((1 - item.blob.size / item.origSize) * 100));
+
+        const div = document.createElement('div');
+        div.className = 'item';
+        div.innerHTML = `
+          <img src="${item.url}" alt="" />
+          <div class="item-info">
+            <div class="item-name">${item.name}</div>
+            <div class="item-meta">${item.w}×${item.h} • ${formatBytes(item.origSize)} → <span>${formatBytes(item.blob.size)} (-${pct}%)</span></div>
+          </div>
+          <button class="save-one-btn">Save</button>
+        `;
+        div.querySelector('.save-one-btn').addEventListener('click', () => triggerDownload(item));
+        imageList.appendChild(div);
+      });
+
+      const totalPct = Math.max(0, Math.round((1 - totalNew / totalOrig) * 100));
+      origSizeEl.textContent = formatBytes(totalOrig);
+      newSizeEl.textContent = `${formatBytes(totalNew)} (-${totalPct}%)`;
+      downloadAllBtn.textContent = `Save All (${compressedResults.length} Images)`;
+    }
+
+    function triggerDownload(item) {
       const a = document.createElement('a');
-      a.href = URL.createObjectURL(compressedBlob);
-      a.download = `reduced-${Date.now()}.${ext}`;
+      a.href = item.url;
+      a.download = item.name;
       a.click();
+    }
+
+    fileInput.addEventListener('change', (e) => {
+      const files = Array.from(e.target.files);
+      if (!files.length) return;
+      if (files.length > MAX_FILES) {
+        warnBox.style.display = 'block';
+        warnBox.textContent = `ပုံ ${files.length} ပုံ ရွေးထားပါတယ်။ အများဆုံး ${MAX_FILES} ပုံပဲ လက်ခံတာမို့ ပထမ ပုံ ၃၀ ကိုပဲ ယူထားပါတယ်။`;
+        selectedFiles = files.slice(0, MAX_FILES);
+      } else {
+        warnBox.style.display = 'none';
+        selectedFiles = files;
+      }
+      selectedCount.textContent = `ရွေးထားသောပုံ: ${selectedFiles.length} / ${MAX_FILES} ပုံ`;
+      compressAll();
+    });
+
+    compressBtn.addEventListener('click', compressAll);
+
+    downloadAllBtn.addEventListener('click', () => {
+      compressedResults.forEach((item, i) => {
+        setTimeout(() => triggerDownload(item), i * 350);
+      });
     });
 
     if ('serviceWorker' in navigator) {
