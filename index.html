@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Image Size Reducer</title>
+  <link rel="manifest" href="./manifest.json" />
+  <meta name="theme-color" content="#0f172a" />
+  <style>
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body { margin: 0; background: #0f172a; color: #f8fafc; padding: 16px; display: flex; justify-content: center; }
+    .app { width: 100%; max-width: 480px; }
+    h1 { font-size: 1.4rem; text-align: center; margin-bottom: 16px; }
+    .card { background: #1e293b; border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+    .upload-btn { display: block; width: 100%; padding: 14px; text-align: center; background: #3b82f6; color: #fff; border-radius: 10px; font-weight: 600; cursor: pointer; }
+    input[type="file"] { display: none; }
+    label { display: flex; justify-content: space-between; font-size: 0.9rem; margin-top: 12px; color: #cbd5e1; }
+    input[type="range"], select { width: 100%; margin-top: 6px; padding: 8px; border-radius: 8px; border: none; background: #334155; color: #fff; }
+    .stats { display: flex; justify-content: space-between; gap: 8px; margin-top: 12px; font-size: 0.85rem; }
+    .stat-box { flex: 1; background: #0f172a; padding: 10px; border-radius: 8px; text-align: center; }
+    .stat-box strong { display: block; font-size: 1rem; margin-top: 4px; color: #38bdf8; }
+    .saved { color: #4ade80 !important; }
+    img { width: 100%; max-height: 260px; object-fit: contain; border-radius: 10px; margin-top: 12px; background: #0f172a; display: none; }
+    .download-btn { width: 100%; padding: 14px; margin-top: 14px; border: none; border-radius: 10px; background: #22c55e; color: #052e16; font-size: 1rem; font-weight: 700; cursor: pointer; display: none; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>Image Size Reducer</h1>
+
+    <div class="card">
+      <label class="upload-btn" for="fileInput">Choose Image</label>
+      <input type="file" id="fileInput" accept="image/*" />
+
+      <label>Quality <span id="qVal">75%</span></label>
+      <input type="range" id="quality" min="10" max="100" value="75" />
+
+      <label>Max Width</label>
+      <select id="maxWidth">
+        <option value="0">Original Size</option>
+        <option value="1920">1920 px (Full HD)</option>
+        <option value="1280" selected>1280 px (HD)</option>
+        <option value="800">800 px (Small)</option>
+      </select>
+
+      <label>Output Format</label>
+      <select id="format">
+        <option value="image/jpeg">JPEG (.jpg)</option>
+        <option value="image/webp">WebP (.webp - Smallest)</option>
+      </select>
+    </div>
+
+    <div class="card" id="resultCard" style="display:none;">
+      <div class="stats">
+        <div class="stat-box">Original<strong id="origSize">-</strong></div>
+        <div class="stat-box">Reduced<strong id="newSize" class="saved">-</strong></div>
+      </div>
+      <img id="preview" alt="Preview" />
+      <button class="download-btn" id="downloadBtn">Save Reduced Image</button>
+    </div>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const qualityEl = document.getElementById('quality');
+    const qVal = document.getElementById('qVal');
+    const maxWidthEl = document.getElementById('maxWidth');
+    const formatEl = document.getElementById('format');
+    const resultCard = document.getElementById('resultCard');
+    const origSizeEl = document.getElementById('origSize');
+    const newSizeEl = document.getElementById('newSize');
+    const preview = document.getElementById('preview');
+    const downloadBtn = document.getElementById('downloadBtn');
+
+    let originalFile = null;
+    let compressedBlob = null;
+
+    function formatBytes(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / 1048576).toFixed(2) + ' MB';
+    }
+
+    function compressImage() {
+      if (!originalFile) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          let w = img.width;
+          let h = img.height;
+          const maxW = parseInt(maxWidthEl.value, 10);
+          if (maxW > 0 && w > maxW) {
+            h = Math.round((h * maxW) / w);
+            w = maxW;
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+
+          const mime = formatEl.value;
+          const q = parseInt(qualityEl.value, 10) / 100;
+
+          canvas.toBlob((blob) => {
+            compressedBlob = blob;
+            const savedPct = Math.max(0, Math.round((1 - blob.size / originalFile.size) * 100));
+            origSizeEl.textContent = formatBytes(originalFile.size);
+            newSizeEl.textContent = `${formatBytes(blob.size)} (-${savedPct}%)`;
+            preview.src = URL.createObjectURL(blob);
+            preview.style.display = 'block';
+            downloadBtn.style.display = 'block';
+            resultCard.style.display = 'block';
+          }, mime, q);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(originalFile);
+    }
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files[0]) {
+        originalFile = e.target.files[0];
+        compressImage();
+      }
+    });
+
+    qualityEl.addEventListener('input', () => {
+      qVal.textContent = qualityEl.value + '%';
+      compressImage();
+    });
+    maxWidthEl.addEventListener('change', compressImage);
+    formatEl.addEventListener('change', compressImage);
+
+    downloadBtn.addEventListener('click', () => {
+      if (!compressedBlob) return;
+      const ext = formatEl.value === 'image/webp' ? 'webp' : 'jpg';
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(compressedBlob);
+      a.download = `reduced-${Date.now()}.${ext}`;
+      a.click();
+    });
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js');
+    }
+  </script>
+</body>
+</html>
